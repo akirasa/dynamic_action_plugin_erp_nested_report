@@ -1,0 +1,341 @@
+/* ==========================================================================
+   ERP Nested Grid - Professional Enterprise UI Theme
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. زر التوسيع في السطر الرئيسي (Expand Button)
+   -------------------------------------------------------------------------- */
+.SUB_TABLE_EXPAND_BTN {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 4px 12px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #0369a1;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.SUB_TABLE_EXPAND_BTN:hover {
+    background: #0284c7;
+    color: #ffffff;
+    border-color: #0284c7;
+    box-shadow: 0 3px 8px rgba(2, 132, 199, 0.25);
+    transform: translateY(-1px);
+}
+
+.SUB_TABLE_EXPAND_BTN.is-active {
+    background: #059669;
+    color: #ffffff;
+    border-color: #059669;
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+}
+
+.SUB_TABLE_EXPAND_BTN .SUB_TABLE_ARROW_ICON {
+    font-size: 9px;
+    transition: transform 0.25s ease;
+}
+
+.SUB_TABLE_EXPAND_BTN.is-active .SUB_TABLE_ARROW_ICON {
+    transform: rotate(90deg);
+}
+
+/* السطر النشط المفتوح */
+.SUB_TABLE_PARENT_ROW_ACTIVE {
+    background-color: #f0f9ff !important;
+    box-shadow: inset 4px 0 0 #0284c7;
+}
+
+.SUB_TABLE_HOST_ROW > td {
+    padding: 0 !important;
+    background-color: #f8fafc !important;
+    border: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. الحاوية العامة للجدول الفرعي (Container)
+   -------------------------------------------------------------------------- */
+.lvl2-row-container {
+    padding: 10px 18px 16px 18px;
+}
+
+.SUB_TABLE_CONTAINER {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.03);
+    overflow: hidden;
+    animation: fadeInSlide 0.25s ease-out;
+}
+
+@keyframes fadeInSlide {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --------------------------------------------------------------------------
+   3. شريط العنوان والتحكم (Header Ribbon)
+   -------------------------------------------------------------------------- */
+.SUB_TABLE_HEADER_RIBBON {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.SUB_TABLE_TITLE_GROUP {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 13.5px;
+    color: #1e293b;
+}
+
+.SUB_TABLE_TITLE_GROUP i {
+    color: #0284c7;
+    font-size: 15px;
+}
+
+.SUB_TABLE_BADGE {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid #bae6fd;
+}
+
+.SUB_TABLE_CONTROLS {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.SUB_TABLE_CTRL_BTN {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+.SUB_TABLE_CTRL_BTN:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+
+.SUB_TABLE_CTRL_BTN.SUB_TABLE_CLOSE_BTN:hover {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+
+/* --------------------------------------------------------------------------
+   4. صندوق البحث السريع (Search Box)
+   -------------------------------------------------------------------------- */
+.SUB_TABLE_SEARCH_BOX {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.SUB_TABLE_SEARCH_BOX i {
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.SUB_TABLE_SEARCH_INPUT {
+    flex: 1;
+    max-width: 320px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    background: #f8fafc;
+    color: #1e293b;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.SUB_TABLE_SEARCH_INPUT:focus {
+    background: #ffffff;
+    border-color: #0284c7;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+/* --------------------------------------------------------------------------
+   5. القواعد العامة للجدول وتوسيط النصوص
+   -------------------------------------------------------------------------- */
+.SUB_TABLE_SCROLL {
+    max-height: 380px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.SUB_TABLE_GRID {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12.5px;
+}
+
+/* توسيط رؤوس الأعمدة */
+.SUB_TABLE_TH {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    text-align: center !important;
+    vertical-align: middle !important;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: inset 0 -1px 0 #cbd5e1;
+}
+
+/* توسيط خلايا البيانات */
+.SUB_TABLE_TD {
+    text-align: center !important;
+    vertical-align: middle !important;
+    white-space: nowrap;
+    transition: background-color 0.15s ease;
+}
+
+/* --------------------------------------------------------------------------
+   6. القوالب الاحترافية الثلاثة (Table Styles)
+   -------------------------------------------------------------------------- */
+
+/* === [القالب الأول: STRIPED - الأزرق المؤسسي المخطط] === */
+.STYLE_STRIPED .SUB_TABLE_TH {
+    background: #f8fafc;
+    color: #334155;
+    padding: 9px 14px;
+    border-bottom: 2px solid #3b82f6; /* شريط سفلي أزرق */
+}
+
+.STYLE_STRIPED .SUB_TABLE_TD {
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.STYLE_STRIPED .SUB_TABLE_GRID tbody tr:nth-child(even) {
+    background-color: #f8fafc !important; /* لون السطر المخطط */
+}
+
+.STYLE_STRIPED .SUB_TABLE_GRID tbody tr:nth-child(odd) {
+    background-color: #ffffff !important;
+}
+
+.STYLE_STRIPED .SUB_TABLE_GRID tbody tr:hover {
+    background-color: #eff6ff !important; /* لون تمييز سماوي عند المرور */
+}
+
+
+/* === [القالب الثاني: COMPACT - المحاسبي والمالي المركز] === */
+.STYLE_COMPACT .SUB_TABLE_GRID {
+    font-size: 11.5px;
+}
+
+.STYLE_COMPACT .SUB_TABLE_TH {
+    background: #e2e8f0;
+    color: #1e293b;
+    padding: 5px 8px !important;
+    font-size: 11px;
+    border-bottom: 2px solid #94a3b8;
+    border-left: 1px solid #cbd5e1;
+}
+
+.STYLE_COMPACT .SUB_TABLE_TD {
+    padding: 4px 8px !important; /* مسافات ضيقة جداً للبيانات الكثيرة */
+    line-height: 1.25;
+    color: #0f172a;
+    border-bottom: 1px solid #e2e8f0;
+    border-left: 1px solid #f1f5f9; /* حدود خلايا شبكية */
+}
+
+.STYLE_COMPACT .SUB_TABLE_GRID tbody tr:hover {
+    background-color: #f1f5f9 !important;
+}
+
+
+/* === [القالب الثالث: DEFAULT - الكلاسيكي الفاخر] === */
+.STYLE_DEFAULT .SUB_TABLE_TH {
+    background: #ffffff;
+    color: #475569;
+    padding: 10px 14px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.STYLE_DEFAULT .SUB_TABLE_TD {
+    padding: 9px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #475569;
+}
+
+.STYLE_DEFAULT .SUB_TABLE_GRID tbody tr:hover {
+    background-color: #fafafa !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. شريط التمرير وحالات التحميل
+   -------------------------------------------------------------------------- */
+.SUB_TABLE_SCROLL::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.SUB_TABLE_SCROLL::-webkit-scrollbar-track {
+    background: #f8fafc;
+}
+.SUB_TABLE_SCROLL::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.SUB_TABLE_SCROLL::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.SUB_TABLE_LOADING {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    color: #64748b;
+    font-weight: 600;
+    gap: 8px;
+}
+
+.SUB_TABLE_ERROR {
+    padding: 14px;
+    text-align: center;
+    color: #b91c1c;
+    background: #fef2f2;
+    font-weight: 600;
+}
+
+.SUB_TABLE_EMPTY {
+    padding: 24px;
+    text-align: center;
+    color: #64748b;
+    font-weight: 500;
+}
