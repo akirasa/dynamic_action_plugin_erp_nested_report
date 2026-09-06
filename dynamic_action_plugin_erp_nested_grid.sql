@@ -64,8 +64,8 @@ wwv_flow_imp_shared.create_plugin(
 ,p_javascript_file_urls=>'#APP_FILES#ERPNestedGridPlugin#MIN#.js'
 ,p_css_file_urls=>'#APP_FILES#ERPNestedGridPlugincss#MIN#.css'
 ,p_api_version=>1
-,p_render_function=>'GCRBADMIN.PKG_ERP_NESTED_GRID2.RENDER_DYNAMIC_ACTION'
-,p_ajax_function=>'GCRBADMIN.PKG_ERP_NESTED_GRID2.AJAX_CALLBACK'
+,p_render_function=>'PKG_ERP_NESTED_GRID2.RENDER_DYNAMIC_ACTION'
+,p_ajax_function=>'PKG_ERP_NESTED_GRID2.AJAX_CALLBACK'
 ,p_substitute_attributes=>true
 ,p_version_scn=>1361376379
 ,p_subscribe_plugin_settings=>false
