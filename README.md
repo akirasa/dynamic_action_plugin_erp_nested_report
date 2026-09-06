@@ -1,4 +1,4 @@
-Here is the complete, step-by-step developer guide in English for installing,
+Here is the complete, step-by-step developer guide for installing,
 configuring, and using the ERP Nested Grid Plugin in Oracle APEX.
 
 Developer Guide: ERP Nested Grid Plugin
