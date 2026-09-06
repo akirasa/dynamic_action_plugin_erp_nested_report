@@ -1,4 +1,3 @@
-
 {
   "name": "ERP Nested Grid",
   "version": "3.0.0",
@@ -42,9 +41,8 @@
         "internalName": "ERP_NESTED_GRID",
         "type": "dynamic action",
         "demo": "https://github.com/akirasa/dynamic_action_plugin_erp_nested_report",
-        "previewImage": "https://raw.githubusercontent.com/akirasa/dynamic_action_plugin_erp_nested_report/main/image_2026-09-06_204354518.png"
+        "previewImage": "https://raw.githubusercontent.com/akirasa/dynamic_action_plugin_erp_nested_report/main/preview.png"
       }
     }
   }
 }
-
