@@ -2,7 +2,7 @@
 {
   "name": "ERP Nested Grid",
   "version": "3.0.0",
-  "description": "Oracle APEX Dynamic Action plug-in that adds interactive nested detail grids directly inside Interactive Reports. It provides configurable SQL-based detail loading, row-level drill-down, filtering, presentation options and RTL support.",
+  "description": "Oracle APEX Dynamic Action plug-in that adds interactive nested detail grids directly inside Interactive Reports, providing configurable SQL-based detail loading, row-level drill-down, filtering, pagination, presentation options and RTL support.",
   "keywords": [
     "oracle",
     "apex",
