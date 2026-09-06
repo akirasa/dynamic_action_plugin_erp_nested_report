@@ -1,3 +1,4 @@
+```json
 {
   "name": "ERP Nested Grid",
   "version": "3.0.0",
@@ -15,13 +16,15 @@
   ],
   "homepage": "https://github.com/akirasa/dynamic_action_plugin_erp_nested_report",
   "bugs": {
-    "url": "https://github.com/akirasa/dynamic_action_plugin_erp_nested_report/issues"
+    "url": "https://github.com/akirasa/dynamic_action_plugin_erp_nested_report/issues",
+    "email": "muneersalah50@gmail.com"
   },
   "license": "MIT",
   "commercial": "No",
   "author": {
     "name": "Muneer Salah",
-    "email": "muneersalah50@gmail.com"
+    "email": "muneersalah50@gmail.com",
+    "url": "https://github.com/akirasa"
   },
   "repository": {
     "type": "git",
@@ -44,3 +47,4 @@
     }
   }
 }
+```
