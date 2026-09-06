@@ -1,7 +1,7 @@
 {
   "name": "ERP Nested Grid",
   "version": "3.0.0",
-  "description": "Oracle APEX Dynamic Action plug-in for displaying interactive nested detail grids inside Interactive Reports.",
+  "description": "Oracle APEX Dynamic Action plug-in that adds interactive nested detail grids directly inside Interactive Reports, providing configurable SQL-based detail loading, row-level drill-down, filtering and RTL support.",
   "keywords": [
     "oracle",
     "apex",
@@ -10,6 +10,7 @@
     "interactive report",
     "nested grid",
     "nested report",
+    "detail grid",
     "drill down",
     "ERP"
   ],
@@ -27,7 +28,11 @@
     "url": "https://github.com/akirasa/dynamic_action_plugin_erp_nested_report.git"
   },
   "oracle": {
-    "versions": [],
+    "versions": [
+      "19.0.0.0.0",
+      "21.0.0.0.0",
+      "23.0.0.0.0"
+    ],
     "apex": {
       "versions": [
         "24.2.0"
