@@ -13,7 +13,7 @@ Step 1: Install the Database Package
 
 1.  Open SQL Workshop \rightarrow SQL Commands (or use SQL Developer / SQLcl).
 2.  Execute and compile the package specification and body:
-      - Run the script PKG_ERP_NESTED_GRID.sql.
+      - Run the script PKG_ERP_NESTED_GRID2.sql.
 3.  Ensure both the Package Specification and Package Body are valid without any
     compilation errors.
 
