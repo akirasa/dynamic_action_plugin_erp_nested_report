@@ -1,6 +1,6 @@
 /**
- * ERP Nested Grid Plugin for Oracle APEX 24.2
- * Production Engine - Unified Architecture
+ * ERP Nested Grid Plugin for Oracle APEX
+ * Universal All-in-One Engine (Normal, Control Break, Aggregates, RTL)
  */
 (function (window, $, apex) {
     "use strict";
@@ -8,8 +8,8 @@
     window.erpNestedGrid = window.erpNestedGrid || {};
     var NG = window.erpNestedGrid;
 
-    // دالة توحيد وتنظيف النصوص لدعم العربية والإنجليزية معاً
-    function normalizeText(val) {
+    // دالة تنظيف ومطابقة النصوص (تدعم العربية والإنجليزية معاً)
+    function normalize(val) {
         if (val === undefined || val === null) return "";
         return String(val)
             .replace(/\u00a0/g, " ")
@@ -18,7 +18,7 @@
             .toUpperCase();
     }
 
-    // جلب قيم عناصر الصفحة التلقائية
+    // جلب قيم الصفحة تلقائياً
     NG.getAllPageItems = function () {
         var pageItems = {};
         $('[id^="P' + apex.env.APP_PAGE_ID + '_"]').each(function () {
@@ -38,20 +38,26 @@
         return pageItems;
     };
 
-    // اكتشاف الخلية المستهدفة بدقة متناهية
+    // اكتشاف خلية الربط في كل السيناريوهات
     NG.findRowKeyCell = function ($row, rowKeyName) {
         var $cells = $row.children("td");
         if (!$cells.length) return $();
 
         var $table = $row.closest("table");
-        if (!$table.length) return $();
-
-        var targetKey = normalizeText(rowKeyName);
+        var targetKey = normalize(rowKeyName);
         if (!targetKey) return $cells.first();
 
-        // 1. البحث في جميع رؤوس الجدول (th) بدون قيد thead
+        // 1. الفحص المباشر في headers الخلية (حالة الكنترول بريك)
+        var $directMatch = $cells.filter(function () {
+            var h = normalize($(this).attr("headers"));
+            return h === targetKey || h.split(/\s+/).indexOf(targetKey) !== -1;
+        }).first();
+
+        if ($directMatch.length) return $directMatch;
+
+        // 2. الفحص في رؤوس الجدول th ومطابقة الـ ID (حالة التقرير العادي والمجاميع)
         var matchedHeaderId = null;
-        var matchedHeaderIndex = -1;
+        var matchedColIdx = -1;
 
         $table.find("th").each(function (idx) {
             if (matchedHeaderId) return;
@@ -64,93 +70,62 @@
                 $th.attr("id"),
                 $th.find("[data-apex-col]").attr("data-apex-col"),
                 $th.find("[data-column]").attr("data-column"),
+                $th.clone().children().remove().end().text(),
                 $th.text()
             ];
 
             for (var i = 0; i < candidates.length; i++) {
-                var candidate = normalizeText(candidates[i]);
-                if (!candidate) continue;
-
-                if (candidate === targetKey || candidate.indexOf(targetKey) !== -1 || targetKey.indexOf(candidate) !== -1) {
+                var c = normalize(candidates[i]);
+                if (c && (c === targetKey || c.indexOf(targetKey) !== -1 || targetKey.indexOf(c) !== -1)) {
                     matchedHeaderId = $th.attr("id");
-                    matchedHeaderIndex = idx;
+                    matchedColIdx = idx;
                     break;
                 }
             }
         });
 
-        // 2. إذا وجدنا معرّف الرأس (Header ID)، نطابقه مع headers الخلية
         if (matchedHeaderId) {
-            var $cellByHeader = $cells.filter(function () {
+            var $byHeader = $cells.filter(function () {
                 var h = String($(this).attr("headers") || "").split(/\s+/);
                 return h.indexOf(matchedHeaderId) !== -1;
             }).first();
 
-            if ($cellByHeader.length) return $cellByHeader;
+            if ($byHeader.length) return $byHeader;
         }
 
-        // 3. المطابقة المباشرة لنص المفتاح داخل headers
-        var $cellByDirectHeaders = $cells.filter(function () {
-            var h = normalizeText($(this).attr("headers"));
-            return h === targetKey || h.indexOf(targetKey) !== -1;
-        }).first();
-
-        if ($cellByDirectHeaders.length) return $cellByDirectHeaders;
-
-        // 4. المطابقة عبر رقم العمود (Index)
-        if (matchedHeaderIndex >= 0 && matchedHeaderIndex < $cells.length) {
-            return $cells.eq(matchedHeaderIndex);
+        // 3. المطابقة عبر الترتيب (Index)
+        if (matchedColIdx >= 0 && matchedColIdx < $cells.length) {
+            return $cells.eq(matchedColIdx);
         }
 
-        // 5. خطة الإنقاذ: تجاوز أعمدة الروابط والأيقونات والبحث عن أول خلية بيانات صالحة
-        var $candidate = $cells.filter(function () {
+        // 4. خطة الأمان: اختيار أول خلية بيانات حقيقية وتجاوز أعمدة الروابط والأيقونات
+        var $fallback = $cells.filter(function () {
             var $td = $(this);
             var txt = $td.clone().children().remove().end().text().trim();
             return txt !== "" && !$td.find("a.a-IRR-link, button, .fa, .t-Icon").length;
         }).first();
 
-        return $candidate.length ? $candidate : $cells.first();
+        return $fallback.length ? $fallback : $cells.first();
     };
 
-    // قراءة الإعدادات بربط صريح ومحكم
     NG.parseConfig = function (action) {
-        var config = {
+        return {
             sql: action.attribute01 ? String(action.attribute01).trim() : null,
             targetIR: action.attribute02 ? String(action.attribute02).trim() : null,
-            rowKey: action.attribute03 ? String(action.attribute03).trim() : null,
+            rowKey: action.attribute03 ? String(action.attribute03).trim() : "REQ_ID",
             title: action.attribute05 ? String(action.attribute05).trim() : "الحركات التفصيلية",
             style: action.attribute06 ? String(action.attribute06).trim() : "STRIPED",
             enableSearch: action.attribute07 !== "N",
             rtl: action.attribute08 !== "N",
             ajaxIdentifier: action.ajaxIdentifier
         };
-
-        // Fallback ذكي في حال كانت الخصائص مرتبة بنمط قديم
-        if (!config.rowKey) {
-            for (var i = 1; i <= 15; i++) {
-                var k = "attribute" + (i < 10 ? "0" + i : i);
-                var v = action[k] ? String(action[k]).trim() : null;
-                if (!v) continue;
-                if (!config.sql && /^(WITH|SELECT)\s+/i.test(v)) config.sql = v;
-                else if (!config.rowKey && v.length < 35 && !/^(WITH|SELECT|\{|\})/i.test(v) && v !== "INLINE" && v !== "STRIPED" && v !== "COMPACT" && v !== "Y" && v !== "N") {
-                    config.rowKey = v;
-                }
-            }
-        }
-
-        return config;
     };
 
     NG.execute = function () {
         var action = this.action;
         var config = NG.parseConfig(action);
 
-        console.log("[ERP Nested Grid] Running with Config:", config);
-
-        if (!config.sql) {
-            console.error("[ERP Nested Grid] Aborted: SQL Query is missing.");
-            return;
-        }
+        if (!config.sql) return;
 
         var initGrid = function () {
             var $table = config.targetIR ? $("#" + config.targetIR).find("table.a-IRR-table") : $("table.a-IRR-table");
@@ -163,24 +138,35 @@
             }
         };
 
+        // تنفيذ فوري ومعالجة التأخير
         initGrid();
-        setTimeout(initGrid, 200);
+        setTimeout(initGrid, 150);
+        setTimeout(initGrid, 450);
 
-        // إعادة التهيئة بعد التحديث (Pagination / Filtering / Control Break)
+        // التحديث التلقائي عند: الفلترة، التقليب، إضافة أو إزالة كنترول بريك، أو تجميع
         $(document).off("apexafterrefresh.lvl2_ng").on("apexafterrefresh.lvl2_ng", function () {
             setTimeout(initGrid, 100);
         });
     };
 
-    // معالجة صفوف التقرير
+    // معالجة كافة الصفوف وفلترة أسطر البيانات الحقيقية
     NG.initRows = function ($table, config) {
+        // فلترة دقيقة: استبعاد العناوين، الكنترول بريك، أسطر التجميع، والرسائل الفارغة
         var $rows = $table.find("tbody > tr, tr").filter(function () {
             var $tr = $(this);
-            return !$tr.hasClass("SUB_TABLE_HOST_ROW") &&
-                   !$tr.hasClass("a-IRR-controlBreak") &&
-                   $tr.closest(".lvl2-row-container").length === 0 &&
-                   $tr.children("th").length === 0 &&
-                   $tr.children("td").length > 1;
+
+            var isExcluded = $tr.hasClass("SUB_TABLE_HOST_ROW") ||
+                             $tr.hasClass("a-IRR-controlBreak") ||
+                             $tr.hasClass("a-IRR-aggregate") ||
+                             $tr.hasClass("a-IRR-noData") ||
+                             $tr.hasClass("a-IRR-group") ||
+                             $tr.find(".a-IRR-aggregate-value").length > 0 ||
+                             $tr.find(".a-IRR-noDataMsg, .a-IRR-noData-message").length > 0 ||
+                             $tr.closest(".lvl2-row-container").length > 0 ||
+                             $tr.children("th").length > 0 ||
+                             $tr.children("td").length <= 1;
+
+            return !isExcluded;
         });
 
         $rows.each(function () {
@@ -195,7 +181,11 @@
                 rawVal = $targetCell.find("a").first().text().trim();
             }
 
-            if (!rawVal || rawVal === "-" || rawVal.toLowerCase() === "null") return;
+            // التحقق من صلاحية القيمة (استبعاد القيم الفارغة ونصوص المجاميع)
+            if (!rawVal || rawVal === "-" || rawVal.toLowerCase() === "null" ||
+                /^(مجموع|المجموع|إجمالي|الإجمالي|total|sum|count|avg)$/i.test(rawVal)) {
+                return;
+            }
 
             $row.data("sub-table-key", rawVal);
 
@@ -251,7 +241,6 @@
         var bindValues = NG.getAllPageItems();
         var rowId = $parentRow.data("sub-table-key");
 
-        // تمرير المفتاح بجميع الاحتمالات
         bindValues["REQ_ID"] = rowId;
         bindValues["REQID"] = rowId;
         if (config.rowKey) {
@@ -283,7 +272,7 @@
                 '<div class="SUB_TABLE_TITLE_GROUP"><i class="fa fa-table"></i> ' + config.title + '</div>' +
                 '<button type="button" class="SUB_TABLE_CTRL_BTN SUB_TABLE_CLOSE_BTN" title="إغلاق"><i class="fa fa-times"></i></button>' +
                 '</div>' +
-                '<div class="SUB_TABLE_EMPTY"><i class="fa fa-info-circle"></i> لا توجد بيانات مسجلة لهذا السجل.</div>'
+                '<div class="SUB_TABLE_EMPTY"><i class="fa fa-info-circle"></i> لا توجد حركات مسجلة لهذا السجل.</div>'
             );
             $container.find(".SUB_TABLE_CLOSE_BTN").on("click", function (e) {
                 e.stopPropagation();
@@ -311,7 +300,7 @@
         if (config.enableSearch) {
             html += '<div class="SUB_TABLE_SEARCH_BOX">';
             html += '<i class="fa fa-search"></i>';
-            html += '<input type="text" class="SUB_TABLE_SEARCH_INPUT" placeholder="بحث سريع في النتائج...">';
+            html += '<input type="text" class="SUB_TABLE_SEARCH_INPUT" placeholder="بحث سريع في التفاصيل...">';
             html += '</div>';
         }
 
