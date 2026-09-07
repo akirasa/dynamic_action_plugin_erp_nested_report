@@ -1,10 +1,24 @@
+/**
+ * ERP Nested Grid Plugin for Oracle APEX 24.2
+ * Production Engine - Unified Architecture
+ */
 (function (window, $, apex) {
     "use strict";
 
     window.erpNestedGrid = window.erpNestedGrid || {};
     var NG = window.erpNestedGrid;
 
-    // جلب كافة قيم الصفحة تلقائياً لتغذية البايند فاريابلز (:P1_X)
+    // دالة توحيد وتنظيف النصوص لدعم العربية والإنجليزية معاً
+    function normalizeText(val) {
+        if (val === undefined || val === null) return "";
+        return String(val)
+            .replace(/\u00a0/g, " ")
+            .replace(/\s+/g, " ")
+            .trim()
+            .toUpperCase();
+    }
+
+    // جلب قيم عناصر الصفحة التلقائية
     NG.getAllPageItems = function () {
         var pageItems = {};
         $('[id^="P' + apex.env.APP_PAGE_ID + '_"]').each(function () {
@@ -24,77 +38,106 @@
         return pageItems;
     };
 
-    NG.getRegion = function (staticId) {
-        if (!staticId) return $();
-        try {
-            var r = apex.region(staticId);
-            if (r && r.element) return $(r.element);
-        } catch (e) {}
-        return $("#" + staticId);
-    };
-
+    // اكتشاف الخلية المستهدفة بدقة متناهية
     NG.findRowKeyCell = function ($row, rowKeyName) {
-        if (!rowKeyName) return $row.children("td").first();
-        var targetKey = rowKeyName.toUpperCase();
+        var $cells = $row.children("td");
+        if (!$cells.length) return $();
 
-        var $cell = $row.children("td").filter(function () {
-            var h = ($(this).attr("headers") || "").toUpperCase();
-            return h === targetKey || h.indexOf(targetKey) > -1;
-        });
-        if ($cell.length) return $cell.first();
+        var $table = $row.closest("table");
+        if (!$table.length) return $();
 
-        var cellIndex = -1;
-        $row.closest("table").children("thead").find("th").each(function (idx) {
-            var thId = ($(this).attr("id") || "").toUpperCase();
-            var thText = $(this).text().trim().toUpperCase();
-            if (thId === targetKey || thText === targetKey) {
-                cellIndex = idx;
-                return false;
+        var targetKey = normalizeText(rowKeyName);
+        if (!targetKey) return $cells.first();
+
+        // 1. البحث في جميع رؤوس الجدول (th) بدون قيد thead
+        var matchedHeaderId = null;
+        var matchedHeaderIndex = -1;
+
+        $table.find("th").each(function (idx) {
+            if (matchedHeaderId) return;
+
+            var $th = $(this);
+            var candidates = [
+                $th.attr("data-apex-col"),
+                $th.attr("data-column"),
+                $th.attr("data-column-name"),
+                $th.attr("id"),
+                $th.find("[data-apex-col]").attr("data-apex-col"),
+                $th.find("[data-column]").attr("data-column"),
+                $th.text()
+            ];
+
+            for (var i = 0; i < candidates.length; i++) {
+                var candidate = normalizeText(candidates[i]);
+                if (!candidate) continue;
+
+                if (candidate === targetKey || candidate.indexOf(targetKey) !== -1 || targetKey.indexOf(candidate) !== -1) {
+                    matchedHeaderId = $th.attr("id");
+                    matchedHeaderIndex = idx;
+                    break;
+                }
             }
         });
 
-        if (cellIndex !== -1 && $row.children("td").eq(cellIndex).length) {
-            return $row.children("td").eq(cellIndex);
+        // 2. إذا وجدنا معرّف الرأس (Header ID)، نطابقه مع headers الخلية
+        if (matchedHeaderId) {
+            var $cellByHeader = $cells.filter(function () {
+                var h = String($(this).attr("headers") || "").split(/\s+/);
+                return h.indexOf(matchedHeaderId) !== -1;
+            }).first();
+
+            if ($cellByHeader.length) return $cellByHeader;
         }
-        return $row.children("td").first();
+
+        // 3. المطابقة المباشرة لنص المفتاح داخل headers
+        var $cellByDirectHeaders = $cells.filter(function () {
+            var h = normalizeText($(this).attr("headers"));
+            return h === targetKey || h.indexOf(targetKey) !== -1;
+        }).first();
+
+        if ($cellByDirectHeaders.length) return $cellByDirectHeaders;
+
+        // 4. المطابقة عبر رقم العمود (Index)
+        if (matchedHeaderIndex >= 0 && matchedHeaderIndex < $cells.length) {
+            return $cells.eq(matchedHeaderIndex);
+        }
+
+        // 5. خطة الإنقاذ: تجاوز أعمدة الروابط والأيقونات والبحث عن أول خلية بيانات صالحة
+        var $candidate = $cells.filter(function () {
+            var $td = $(this);
+            var txt = $td.clone().children().remove().end().text().trim();
+            return txt !== "" && !$td.find("a.a-IRR-link, button, .fa, .t-Icon").length;
+        }).first();
+
+        return $candidate.length ? $candidate : $cells.first();
     };
 
-    // تحليل الإعدادات بمرونة تامة (يدعم الترتيب القديم والجديد)
+    // قراءة الإعدادات بربط صريح ومحكم
     NG.parseConfig = function (action) {
         var config = {
-            sql: action.attribute01,
-            targetIR: null,
-            rowKey: null,
-            title: "الحركات التفصيلية",
-            style: "STRIPED",
-            enableSearch: true,
-            rtl: true,
+            sql: action.attribute01 ? String(action.attribute01).trim() : null,
+            targetIR: action.attribute02 ? String(action.attribute02).trim() : null,
+            rowKey: action.attribute03 ? String(action.attribute03).trim() : null,
+            title: action.attribute05 ? String(action.attribute05).trim() : "الحركات التفصيلية",
+            style: action.attribute06 ? String(action.attribute06).trim() : "STRIPED",
+            enableSearch: action.attribute07 !== "N",
+            rtl: action.attribute08 !== "N",
             ajaxIdentifier: action.ajaxIdentifier
         };
 
-        for (var i = 1; i <= 15; i++) {
-            var key = "attribute" + (i < 10 ? "0" + i : i);
-            var val = action[key] ? String(action[key]).trim() : null;
-            if (!val) continue;
-
-            if (/^(WITH|SELECT)\s+/i.test(val)) {
-                config.sql = val;
-            } else if (val === "COMPACT" || val === "STRIPED" || val === "DEFAULT") {
-                config.style = val;
-            } else if (val === "N" && (i === 8 || i === 9 || i === 10)) {
-                config.enableSearch = false;
-            } else if (!config.targetIR && ($("#" + val).length || apex.region(val))) {
-                config.targetIR = val;
-            } else if (!config.rowKey && val.length > 0 && val.length < 40 && !val.startsWith("{") && !val.startsWith("[")) {
-                if (val !== config.targetIR && val !== "INLINE" && val !== "POPUP" && val !== "Y" && val !== "N") {
-                    config.rowKey = val;
+        // Fallback ذكي في حال كانت الخصائص مرتبة بنمط قديم
+        if (!config.rowKey) {
+            for (var i = 1; i <= 15; i++) {
+                var k = "attribute" + (i < 10 ? "0" + i : i);
+                var v = action[k] ? String(action[k]).trim() : null;
+                if (!v) continue;
+                if (!config.sql && /^(WITH|SELECT)\s+/i.test(v)) config.sql = v;
+                else if (!config.rowKey && v.length < 35 && !/^(WITH|SELECT|\{|\})/i.test(v) && v !== "INLINE" && v !== "STRIPED" && v !== "COMPACT" && v !== "Y" && v !== "N") {
+                    config.rowKey = v;
                 }
             }
         }
 
-        if (!config.targetIR) {
-            config.targetIR = $(".a-IRR-region, .t-Region--reportsTable").first().attr("id");
-        }
         return config;
     };
 
@@ -102,46 +145,41 @@
         var action = this.action;
         var config = NG.parseConfig(action);
 
+        console.log("[ERP Nested Grid] Running with Config:", config);
+
         if (!config.sql) {
-            console.warn("[ERP Nested Grid] SQL Query is missing in Dynamic Action.");
+            console.error("[ERP Nested Grid] Aborted: SQL Query is missing.");
             return;
         }
 
         var initGrid = function () {
-            var $region = NG.getRegion(config.targetIR);
-            if (!$region.length) $region = $(".a-IRR-table").closest(".t-Region");
-            if (!$region.length) $region = $(".t-Region");
+            var $table = config.targetIR ? $("#" + config.targetIR).find("table.a-IRR-table") : $("table.a-IRR-table");
+            if (!$table.length) {
+                $table = $("table.t-Report-report, table").not(".SUB_TABLE_GRID").first();
+            }
 
-            if ($region.length) {
-                NG.initRows($region, config);
-
-                $region.off("apexafterrefresh.lvl2_ng").on("apexafterrefresh.lvl2_ng", function () {
-                    setTimeout(function () { NG.initRows($region, config); }, 70);
-                });
+            if ($table.length) {
+                NG.initRows($table, config);
             }
         };
 
         initGrid();
+        setTimeout(initGrid, 200);
+
+        // إعادة التهيئة بعد التحديث (Pagination / Filtering / Control Break)
+        $(document).off("apexafterrefresh.lvl2_ng").on("apexafterrefresh.lvl2_ng", function () {
+            setTimeout(initGrid, 100);
+        });
     };
 
-    NG.initRows = function ($region, config) {
-        var $mainTable = $region.find(".a-IRR-table").first();
-        if (!$mainTable.length) {
-            $mainTable = $region.find("table.t-Report-report, table").not(".SUB_TABLE_GRID").first();
-        }
-        if (!$mainTable.length) return;
-
-        var $rows = $mainTable.children("tbody").children("tr").filter(function () {
+    // معالجة صفوف التقرير
+    NG.initRows = function ($table, config) {
+        var $rows = $table.find("tbody > tr, tr").filter(function () {
             var $tr = $(this);
-            var isSummary = $tr.hasClass("a-IRR-controlBreak") || 
-                            $tr.hasClass("a-IRR-aggregate") || 
-                            $tr.hasClass("a-IRR-group") || 
-                            $tr.hasClass("SUB_TABLE_HOST_ROW") ||
-                            $tr.find(".a-IRR-aggregate-value").length > 0;
-
-            return !isSummary &&
+            return !$tr.hasClass("SUB_TABLE_HOST_ROW") &&
+                   !$tr.hasClass("a-IRR-controlBreak") &&
                    $tr.closest(".lvl2-row-container").length === 0 &&
-                   $tr.find("th").length === 0 &&
+                   $tr.children("th").length === 0 &&
                    $tr.children("td").length > 1;
         });
 
@@ -152,14 +190,18 @@
             var $targetCell = NG.findRowKeyCell($row, config.rowKey);
             if (!$targetCell.length) return;
 
-            var rawVal = $targetCell.text().replace(/\u00a0/g, " ").trim();
-            if (!rawVal || rawVal === "" || rawVal === "-" || rawVal === "null") return;
+            var rawVal = $targetCell.clone().children().remove().end().text().replace(/\u00a0/g, " ").trim();
+            if (!rawVal) {
+                rawVal = $targetCell.find("a").first().text().trim();
+            }
+
+            if (!rawVal || rawVal === "-" || rawVal.toLowerCase() === "null") return;
 
             $row.data("sub-table-key", rawVal);
 
             var $btn = $(
                 '<button type="button" class="SUB_TABLE_EXPAND_BTN" title="عرض التفاصيل">' +
-                '<i class="fa fa-folder-open-o" aria-hidden="true"></i>' +
+                '<i class="fa fa-list-alt" aria-hidden="true"></i>' +
                 '<span>عرض</span>' +
                 '<i class="fa fa-chevron-right SUB_TABLE_ARROW_ICON" aria-hidden="true"></i>' +
                 '</button>'
@@ -168,6 +210,7 @@
             $targetCell.empty().css("text-align", "center").append($btn);
 
             $btn.on("click", function (e) {
+                e.preventDefault();
                 e.stopPropagation();
                 NG.toggleRow($row, config, $btn);
             });
@@ -205,11 +248,13 @@
     };
 
     NG.loadData = function ($parentRow, $container, config, $btn) {
-        // جمع كل متغيرات الصفحة تلقائياً
         var bindValues = NG.getAllPageItems();
-
         var rowId = $parentRow.data("sub-table-key");
-        if (config.rowKey && rowId !== undefined && rowId !== null) {
+
+        // تمرير المفتاح بجميع الاحتمالات
+        bindValues["REQ_ID"] = rowId;
+        bindValues["REQID"] = rowId;
+        if (config.rowKey) {
             bindValues[config.rowKey.toUpperCase()] = rowId;
         }
 
@@ -238,7 +283,7 @@
                 '<div class="SUB_TABLE_TITLE_GROUP"><i class="fa fa-table"></i> ' + config.title + '</div>' +
                 '<button type="button" class="SUB_TABLE_CTRL_BTN SUB_TABLE_CLOSE_BTN" title="إغلاق"><i class="fa fa-times"></i></button>' +
                 '</div>' +
-                '<div class="SUB_TABLE_EMPTY"><i class="fa fa-info-circle"></i> لا توجد حركات مسجلة لهذا السجل.</div>'
+                '<div class="SUB_TABLE_EMPTY"><i class="fa fa-info-circle"></i> لا توجد بيانات مسجلة لهذا السجل.</div>'
             );
             $container.find(".SUB_TABLE_CLOSE_BTN").on("click", function (e) {
                 e.stopPropagation();
@@ -253,7 +298,6 @@
 
         var html = '<div ' + dir + ' class="' + styleClass + '">';
         
-        // شريط العنوان
         html += '<div class="SUB_TABLE_HEADER_RIBBON">';
         html += '<div class="SUB_TABLE_TITLE_GROUP">';
         html += '<i class="fa fa-th-list"></i> ' + config.title;
@@ -264,15 +308,13 @@
         html += '<button type="button" class="SUB_TABLE_CTRL_BTN SUB_TABLE_CLOSE_BTN" title="إغلاق"><i class="fa fa-times"></i></button>';
         html += '</div></div>';
 
-        // البحث السريع
         if (config.enableSearch) {
             html += '<div class="SUB_TABLE_SEARCH_BOX">';
             html += '<i class="fa fa-search"></i>';
-            html += '<input type="text" class="SUB_TABLE_SEARCH_INPUT" placeholder="بحث سريع في التفاصيل...">';
+            html += '<input type="text" class="SUB_TABLE_SEARCH_INPUT" placeholder="بحث سريع في النتائج...">';
             html += '</div>';
         }
 
-        // جدول البيانات
         html += '<div class="SUB_TABLE_SCROLL">';
         html += '<table class="SUB_TABLE_GRID">';
         html += '<thead><tr>';
@@ -283,10 +325,8 @@
 
         data.rows.forEach(function (row) {
             html += '<tr class="SUB_TABLE_ROW">';
-            row.forEach(function (val, idx) {
-                var colType = data.columns[idx] ? data.columns[idx].type : "VARCHAR2";
-                var isNum = colType === "NUMBER" ? ' SUB_TABLE_NUMERIC' : '';
-                html += '<td class="SUB_TABLE_TD' + isNum + '">' + (val !== null ? val : "-") + '</td>';
+            row.forEach(function (val) {
+                html += '<td class="SUB_TABLE_TD">' + (val !== null ? val : "-") + '</td>';
             });
             html += '</tr>';
         });
@@ -296,9 +336,7 @@
         $container.html(html);
 
         if (config.enableSearch) {
-            $container.find(".SUB_TABLE_SEARCH_INPUT").on("click focus keydown", function (e) {
-                e.stopPropagation();
-            }).on("keyup", function (e) {
+            $container.find(".SUB_TABLE_SEARCH_INPUT").on("keyup", function (e) {
                 e.stopPropagation();
                 var filter = $(this).val().toLowerCase();
                 var visibleCount = 0;
